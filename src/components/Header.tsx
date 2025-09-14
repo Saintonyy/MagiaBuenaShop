@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchCategorias } from '@/services/catalogRepo';
 import CartSummary from '@/components/CartSummary';
 import logo from '@/assets/logo.png';
 import logoBanner from '@/assets/logo-banner.png';
@@ -14,13 +14,9 @@ const Header = () => {
 
   // Fetch categories from Supabase
   useEffect(() => {
-    const fetchCategories = async () => {
+    const loadCategories = async () => {
       try {
-        const { data, error } = await supabase
-          .from('v_categorias')
-          .select('categoria');
-        
-        if (error) throw error;
+        const data = await fetchCategorias();
         
         const categoryList = data?.map(item => item.categoria)
           .filter(Boolean)
@@ -34,7 +30,7 @@ const Header = () => {
       }
     };
 
-    fetchCategories();
+    loadCategories();
   }, []);
 
   const getCatalogItems = () => {

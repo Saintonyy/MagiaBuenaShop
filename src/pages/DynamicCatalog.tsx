@@ -6,22 +6,20 @@ import ProductFilters from '@/components/ProductFilters';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchCategorias, fetchProductos } from '@/services/catalogRepo';
 import { Search, Grid3X3, List, Loader2 } from 'lucide-react';
 import logoBanner from '@/assets/logo-banner.png';
 
 interface Product {
   id: string;
   nombre: string;
-  descripcion?: string;
+  categoria: string;
   precio_unidad?: number;
+  precio_gramo?: number;
   precio_onza?: number;
   precio_media_onza?: number;
-  precio_gramo?: number;
-  imagen_url?: string;
-  categoria: string[];
-  precio_por_pieza?: number;
-  activo: boolean;
+  disponible: boolean;
+  cantidad_disponible?: number;
 }
 
 interface Filters {
@@ -50,43 +48,43 @@ const DynamicCatalog = () => {
 
   // Fetch categories
   useEffect(() => {
-    const fetchCategories = async () => {
+    const loadCategories = async () => {
       try {
-        const { data, error } = await supabase
-          .from('v_categorias')
-          .select('categoria');
+        const data = await fetchCategorias();
         
-        if (error) throw error;
-        
-        const categoryList = data?.map(item => item.categoria)
-          .filter(Boolean)
-          .filter(cat => cat !== 'psicodelico') || [];
+        const uniqueCategories = [...new Set(data?.map(item => item.categoria))];
+        const categoryList = uniqueCategories.filter(Boolean) || [];
         setCategories(['all', 'sugeridos', ...categoryList]);
       } catch (error) {
         console.error('Error fetching categories:', error);
+        setCategories(['all', 'sugeridos']);
       }
     };
 
-    fetchCategories();
+    loadCategories();
   }, []);
 
   // Fetch products
   useEffect(() => {
-    const fetchProducts = async () => {
+    const loadProducts = async () => {
       setLoading(true);
       try {
-        let query = supabase.rpc('fn_productos', {
-          cat: selectedCategory === 'all' || selectedCategory === 'sugeridos' ? null : selectedCategory,
-          q: searchTerm || null,
-          page: 1,
-          page_size: 50
-        });
+        let productsData;
         
-        const { data, error } = await query;
+        // Filter by category if not 'all' or 'sugeridos'
+        if (selectedCategory !== 'all' && selectedCategory !== 'sugeridos') {
+          productsData = await fetchProductos({ categoria: selectedCategory });
+        } else {
+          productsData = await fetchProductos();
+        }
         
-        if (error) throw error;
-        
-        let productsToShow = data || [];
+        // Filter by search term if provided
+        let productsToShow = productsData || [];
+        if (searchTerm) {
+          productsToShow = productsToShow.filter(product => 
+            product.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
         
         // Filter for "sugeridos" - show first 8 products as suggested
         if (selectedCategory === 'sugeridos') {
@@ -102,7 +100,7 @@ const DynamicCatalog = () => {
       }
     };
 
-    fetchProducts();
+    loadProducts();
   }, [selectedCategory, searchTerm]);
 
   // Filter and sort products
@@ -111,7 +109,7 @@ const DynamicCatalog = () => {
 
     // Apply price filter
     filtered = filtered.filter(product => {
-      const price = product.precio_unidad || product.precio_gramo || product.precio_por_pieza || 0;
+      const price = product.precio_unidad || product.precio_gramo || 0;
       return price >= filters.priceRange[0] && price <= filters.priceRange[1];
     });
 

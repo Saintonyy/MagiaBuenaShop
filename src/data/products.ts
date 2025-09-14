@@ -6,7 +6,7 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number; // Main price (1 onza for flores, unidad for others)
+  price: number;
   image: string;
   category: string;
   strain: string;
@@ -18,12 +18,9 @@ export interface Product {
     price: number;
   }>;
   badges: string[];
-  // New pricing structure
-  precio_onza?: number;
-  precio_media_onza?: number;
-  precio_gramo?: number;
-  precio_por_pieza?: number;
-  precio_unidad?: number;
+  // New pricing fields
+  price_onza?: number; // For flores category - main price display
+  price_por_pieza?: number; // For non-flores that have piece pricing
 }
 
 export const products: Product[] = [
@@ -31,7 +28,8 @@ export const products: Product[] = [
     id: '1',
     name: 'Gorila Rainbow',
     description: 'Sativa cítrica. Energía creativa. Notas de limón y piña. Una experiencia única que despierta la creatividad y eleva el ánimo con su perfil terpénico tropical.',
-    price: 3800, // Main price - 1 onza
+    price: 3200, // Base price for reference
+    price_onza: 3200, // Main display price for 1 onza
     image: cannabisFlower1,
     category: 'flores',
     strain: 'Gorila Rainbow',
@@ -39,20 +37,19 @@ export const products: Product[] = [
     type: 'Sativa',
     available: true,
     sizes: [
-      { weight: '1 onza', price: 3800 },
-      { weight: '1/2 onza', price: 2000 },
-      { weight: 'Por gramo', price: 140 }
+      { weight: '1 onza (28g)', price: 3200 },
+      { weight: 'Media onza (14g)', price: 1700 },
+      { weight: '50 gramos', price: 5600 },
+      { weight: 'Por gramo', price: 120 }
     ],
-    badges: ['Disponible', 'Sativa', 'Indoor', 'Premium'],
-    precio_onza: 3800,
-    precio_media_onza: 2000,
-    precio_gramo: 140
+    badges: ['Disponible', 'Sativa', 'Indoor', 'Premium']
   },
   {
     id: '2',
     name: 'Purple Haze',
     description: 'Híbrido balanceado con dominancia sativa. Efectos relajantes y creativos. Aroma floral con notas terrosas y dulces que proporcionan una experiencia equilibrada.',
-    price: 3600, // Main price - 1 onza
+    price: 2800,
+    price_onza: 2800,
     image: cannabisFlower1,
     category: 'flores',
     strain: 'Purple Haze',
@@ -60,20 +57,19 @@ export const products: Product[] = [
     type: 'Híbrido',
     available: true,
     sizes: [
-      { weight: '1 onza', price: 3600 },
-      { weight: '1/2 onza', price: 1900 },
-      { weight: 'Por gramo', price: 130 }
+      { weight: '1 onza (28g)', price: 2800 },
+      { weight: 'Media onza (14g)', price: 1500 },
+      { weight: '50 gramos', price: 4900 },
+      { weight: 'Por gramo', price: 105 }
     ],
-    badges: ['Disponible', 'Híbrido', 'Indoor'],
-    precio_onza: 3600,
-    precio_media_onza: 1900,
-    precio_gramo: 130
+    badges: ['Disponible', 'Híbrido', 'Indoor']
   },
   {
     id: '3',
     name: 'OG Kush',
     description: 'Indica clásica. Efectos profundamente relajantes. Perfil terroso con toques cítricos. Ideal para relajación nocturna y descanso reparador.',
-    price: 4200, // Main price - 1 onza
+    price: 3500,
+    price_onza: 3500,
     image: cannabisFlower1,
     category: 'flores',
     strain: 'OG Kush',
@@ -81,20 +77,19 @@ export const products: Product[] = [
     type: 'Indica',
     available: false,
     sizes: [
-      { weight: '1 onza', price: 4200 },
-      { weight: '1/2 onza', price: 2200 },
-      { weight: 'Por gramo', price: 150 }
+      { weight: '1 onza (28g)', price: 3500 },
+      { weight: 'Media onza (14g)', price: 1850 },
+      { weight: '50 gramos', price: 6100 },
+      { weight: 'Por gramo', price: 130 }
     ],
-    badges: ['Agotado', 'Indica', 'Premium', 'Indoor'],
-    precio_onza: 4200,
-    precio_media_onza: 2200,
-    precio_gramo: 150
+    badges: ['Agotado', 'Indica', 'Premium', 'Indoor']
   },
   {
     id: '4',
     name: 'Pre-Roll Premium Mix',
     description: 'Mezcla selecta de nuestras mejores cepas. Perfectamente enrollado para una experiencia sin complicaciones. Ideal para ocasiones especiales.',
-    price: 350, // Main price - por unidad
+    price: 75,
+    price_por_pieza: 75,
     image: preRoll1,
     category: 'pre-rolls',
     strain: 'Mix Premium',
@@ -102,18 +97,18 @@ export const products: Product[] = [
     type: 'Híbrido',
     available: true,
     sizes: [
-      { weight: 'Unidad', price: 350 },
-      { weight: 'Por pieza', price: 80 }
+      { weight: '1 unidad', price: 75 },
+      { weight: '5 unidades', price: 350 },
+      { weight: '10 unidades', price: 650 }
     ],
-    badges: ['Disponible', 'Pre-Roll', 'Premium'],
-    precio_unidad: 350,
-    precio_por_pieza: 80
+    badges: ['Disponible', 'Pre-Roll', 'Premium']
   },
   {
     id: '5',
     name: 'Grinder Glass Pro',
     description: 'Grinder de cristal de alta calidad con compartimento para polen. Diseño ergonómico y resistente. Perfecto para un molido uniforme.',
-    price: 450, // Main price - por unidad
+    price: 80,
+    price_por_pieza: 0, // No piece pricing for this item
     image: paraphernalia1,
     category: 'parafernalia',
     strain: 'N/A',
@@ -121,17 +116,16 @@ export const products: Product[] = [
     type: 'Accesorio',
     available: true,
     sizes: [
-      { weight: 'Unidad', price: 450 }
+      { weight: 'Unitario', price: 80 }
     ],
-    badges: ['Disponible', 'Premium', 'Resistente'],
-    precio_unidad: 450,
-    precio_por_pieza: 0 // This will not show the "por pieza" option
+    badges: ['Disponible', 'Premium', 'Resistente']
   },
   {
     id: '6',
     name: 'White Widow',
     description: 'Híbrido legendario con balance perfecto. Efectos cerebrales y corporales equilibrados. Aroma dulce con toques terrosos y especiados.',
-    price: 3700, // Main price - 1 onza
+    price: 3000,
+    price_onza: 3000,
     image: cannabisFlower1,
     category: 'flores',
     strain: 'White Widow',
@@ -139,14 +133,29 @@ export const products: Product[] = [
     type: 'Híbrido',
     available: true,
     sizes: [
-      { weight: '1 onza', price: 3700 },
-      { weight: '1/2 onza', price: 1950 },
-      { weight: 'Por gramo', price: 135 }
+      { weight: '1 onza (28g)', price: 3000 },
+      { weight: 'Media onza (14g)', price: 1600 },
+      { weight: '50 gramos', price: 5200 },
+      { weight: 'Por gramo', price: 110 }
     ],
-    badges: ['Disponible', 'Híbrido', 'Clásico'],
-    precio_onza: 3700,
-    precio_media_onza: 1950,
-    precio_gramo: 135
+    badges: ['Disponible', 'Híbrido', 'Clásico']
+  },
+  {
+    id: '7',
+    name: 'Papel Rizla Silver',
+    description: 'Papeles ultra finos de alta calidad para una experiencia de fumar suave y limpia.',
+    price: 45,
+    price_por_pieza: 15, // Price per individual booklet
+    image: paraphernalia1,
+    category: 'parafernalia',
+    strain: 'N/A',
+    thc: 'N/A',
+    type: 'Accesorio',
+    available: true,
+    sizes: [
+      { weight: 'Paquete (3 libritos)', price: 45 }
+    ],
+    badges: ['Disponible', 'Premium']
   }
 ];
 

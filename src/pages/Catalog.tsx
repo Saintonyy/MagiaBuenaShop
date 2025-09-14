@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import ProductCard from '@/components/ProductCard';
-import ProductFilters from '@/components/ProductFilters';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,12 +14,6 @@ const Catalog = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(category || 'all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [filters, setFilters] = useState({
-    priceRange: [0, 5000] as [number, number],
-    thcRange: [0, 35] as [number, number],
-    sortBy: 'name',
-    category: selectedCategory
-  });
 
   const categories = [
     { id: 'all', name: 'Todos', count: products.length },
@@ -30,39 +23,14 @@ const Catalog = () => {
   ];
 
   const filteredProducts = useMemo(() => {
-    let filtered = products.filter(product => {
+    return products.filter(product => {
       const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            product.strain.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-
-    // Apply price filter
-    filtered = filtered.filter(product => {
-      const price = product.price || 0;
-      return price >= filters.priceRange[0] && price <= filters.priceRange[1];
-    });
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'price-low':
-          return (a.price || 0) - (b.price || 0);
-        case 'price-high':
-          return (b.price || 0) - (a.price || 0);
-        case 'thc-high':
-          return (b.thc || 0) - (a.thc || 0);
-        case 'thc-low':
-          return (a.thc || 0) - (b.thc || 0);
-        case 'name':
-        default:
-          return a.name.localeCompare(b.name);
-      }
-    });
-
-    return filtered;
-  }, [selectedCategory, searchTerm, filters]);
+  }, [selectedCategory, searchTerm]);
 
   return (
     <Layout>

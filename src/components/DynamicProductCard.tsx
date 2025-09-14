@@ -4,21 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Calculator, Plus, Minus } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
-import logo from '@/assets/logo.png';
 
+// Product interface matching productos table
 interface Product {
   id: string;
   nombre: string;
-  descripcion?: string;
+  categoria: string;
   precio_unidad?: number;
+  precio_gramo?: number;
   precio_onza?: number;
   precio_media_onza?: number;
-  precio_gramo?: number;
-  imagen_url?: string;
-  categoria: string[];
-  precio_por_pieza?: number;
-  activo: boolean;
+  disponible: boolean;
+  cantidad_disponible?: number;
 }
 
 interface DynamicProductCardProps {
@@ -26,34 +23,56 @@ interface DynamicProductCardProps {
   className?: string;
 }
 
+// Local storage for price estimation
+const ESTIMATION_KEY = 'magiabuena_price_estimation';
+
+const getEstimation = () => {
+  try {
+    return JSON.parse(localStorage.getItem(ESTIMATION_KEY) || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const saveEstimation = (items: any[]) => {
+  localStorage.setItem(ESTIMATION_KEY, JSON.stringify(items));
+};
+
+type WeightType = 'gramo' | 'media_onza' | 'onza' | 'unidad';
+
 const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [selectedWeight, setSelectedWeight] = useState<'gramo' | 'media_onza' | 'onza' | 'unidad' | 'pieza'>(
-    product.categoria.includes('flores') ? 'onza' : 'unidad'
-  );
-  const [pieceQuantity, setPieceQuantity] = useState(1);
-  const { addItem } = useCart();
+  const [selectedWeight, setSelectedWeight] = useState<WeightType>(() => {
+    // Default to the first available option
+    if (product.precio_gramo) return 'gramo';
+    if (product.precio_unidad) return 'unidad';
+    if (product.precio_onza) return 'onza';
+    if (product.precio_media_onza) return 'media_onza';
+    return 'unidad';
+  });
 
-  const isFlores = product.categoria.includes('flores');
-  const hasPerPiece = product.precio_por_pieza !== undefined && product.precio_por_pieza > 0;
+  const isFlores = product.categoria === 'flores';
   
-  // Generate description if none exists
   const getDescription = () => {
-    if (product.descripcion) return product.descripcion;
-    
-    const categoryText = product.categoria.join(', ');
-    return `Producto premium ${product.nombre} de alta calidad en categoría ${categoryText}. Disponible con garantía de frescura y calidad superior.`;
+    return 'Producto premium de alta calidad';
   };
 
+  // Get main price display
   const getMainPrice = () => {
     if (isFlores) {
-      // For flores, main price is 1 onza
-      return `$${(product.precio_onza || 0).toLocaleString('es-MX')}`;
+      // For flores, show the most relevant price
+      if (product.precio_gramo) {
+        return `$${(product.precio_gramo || 0).toLocaleString('es-MX')}/g`;
+      }
+      if (product.precio_onza) {
+        return `$${(product.precio_onza || 0).toLocaleString('es-MX')}/oz`;
+      }
     } else {
       // For others, main price is unidad
       return `$${(product.precio_unidad || 0).toLocaleString('es-MX')}`;
     }
+    return `$${(product.precio_unidad || 0).toLocaleString('es-MX')}`;
   };
 
   const getCurrentPrice = () => {
@@ -64,8 +83,6 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
         return product.precio_media_onza || 0;
       case 'gramo':
         return (product.precio_gramo || 0) * quantity;
-      case 'pieza':
-        return (product.precio_por_pieza || 0) * pieceQuantity;
       case 'unidad':
       default:
         return product.precio_unidad || 0;
@@ -74,34 +91,44 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
 
   const getQuantity = () => {
     if (selectedWeight === 'gramo') return quantity;
-    if (selectedWeight === 'pieza') return pieceQuantity;
     return 1;
   };
 
-  const handleAddToCart = () => {
-    const unitPrice = selectedWeight === 'gramo' ? (product.precio_gramo || 0) : 
-                     selectedWeight === 'pieza' ? (product.precio_por_pieza || 0) : 
-                     getCurrentPrice();
+  const addToEstimation = () => {
+    const unitPrice = selectedWeight === 'gramo' ? (product.precio_gramo || 0) : getCurrentPrice();
     const itemQuantity = getQuantity();
     
-    addItem({
+    const estimation = getEstimation();
+    const newItem = {
+      id: product.id + '_' + selectedWeight,
       name: product.nombre,
-      category: product.categoria[0] || 'otros',
-      price: unitPrice,
+      option: selectedWeight,
       quantity: itemQuantity,
-      type: selectedWeight
-    });
+      unitPrice: unitPrice,
+      total: getCurrentPrice()
+    };
+    
+    const existingIndex = estimation.findIndex((item: any) => item.id === newItem.id);
+    if (existingIndex >= 0) {
+      estimation[existingIndex].quantity += newItem.quantity;
+      estimation[existingIndex].total = estimation[existingIndex].quantity * estimation[existingIndex].unitPrice;
+    } else {
+      estimation.push(newItem);
+    }
+    
+    saveEstimation(estimation);
+    setIsOpen(false);
+    alert(`Agregado al cálculo: ${product.nombre} - ${selectedWeight}`);
   };
 
   const getWeightOptions = () => {
     const options = [];
     if (isFlores) {
-      if (product.precio_gramo) options.push({ key: 'gramo', label: '1 Gramo', price: product.precio_gramo });
-      if (product.precio_media_onza) options.push({ key: 'media_onza', label: '1/2 Onza', price: product.precio_media_onza });
-      if (product.precio_onza) options.push({ key: 'onza', label: '1 Onza', price: product.precio_onza });
+      if (product.precio_gramo) options.push({ key: 'gramo', label: 'GRAMO', price: product.precio_gramo });
+      if (product.precio_media_onza) options.push({ key: 'media_onza', label: 'Media Onza', price: product.precio_media_onza });
+      if (product.precio_onza) options.push({ key: 'onza', label: 'Onza', price: product.precio_onza });
     } else {
       if (product.precio_unidad) options.push({ key: 'unidad', label: 'Unidad', price: product.precio_unidad });
-      if (hasPerPiece && product.precio_por_pieza) options.push({ key: 'pieza', label: 'Por Pieza', price: product.precio_por_pieza });
     }
     return options;
   };
@@ -109,35 +136,24 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
   return (
     <>
       <div 
-        className={`glass-card glass-hover rounded-glass p-6 cursor-pointer group ${className}`}
+        className={`glass-card glass-hover rounded-glass p-6 cursor-pointer group transform transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10 ${className}`}
         onClick={() => setIsOpen(true)}
       >
         {/* Product Image */}
         <div className="relative mb-4 overflow-hidden rounded-glass">
-          {product.imagen_url ? (
-            <img
-              src={product.imagen_url}
-              alt={product.nombre}
-              className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-          ) : (
-            <div className="w-full h-48 bg-gradient-to-br from-glass/40 to-glass/20 flex items-center justify-center">
-              <div className="text-muted-foreground text-sm">Sin imagen</div>
-            </div>
-          )}
+          <div className="w-full h-48 bg-gradient-to-br from-glass/40 to-glass/20 flex items-center justify-center">
+            <div className="text-muted-foreground text-sm">Sin imagen</div>
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-glass-shadow/60 to-transparent" />
           
-          {/* Category Badges */}
-          <div className="absolute top-3 left-3 flex flex-wrap gap-1">
-            {product.categoria.slice(0, 2).map((cat) => (
-              <Badge 
-                key={cat}
-                variant="secondary"
-                className="text-xs glass-card text-foreground/80"
-              >
-                {cat}
-              </Badge>
-            ))}
+          {/* Category Badge */}
+          <div className="absolute top-3 left-3">
+            <Badge 
+              variant="secondary"
+              className="text-xs glass-card text-foreground/80"
+            >
+              {product.categoria}
+            </Badge>
           </div>
         </div>
 
@@ -155,17 +171,19 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
           <div className="flex items-center justify-between pt-2">
             <div className="text-2xl font-bold text-primary">
               {getMainPrice()}
+              {isFlores && product.precio_onza && <span className="text-sm text-muted-foreground ml-1">/onza</span>}
             </div>
             <Button 
               size="sm" 
-              className="glass-button"
+              className="glass-button transform transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 hover:bg-primary/20 hover:border-primary/50"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsOpen(true);
               }}
+              disabled={!product.disponible}
             >
-              <Calculator className="w-4 h-4 mr-2" />
-              Ver
+              <Calculator className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:rotate-12" />
+              {product.disponible ? 'Ver' : 'Agotado'}
             </Button>
           </div>
         </div>
@@ -174,13 +192,8 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
       {/* Product Detail Modal */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="glass-card border-glass-border/30 max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="relative">
-            <img 
-              src={logo} 
-              alt="Magia Buena Logo" 
-              className="absolute top-0 right-0 h-8 w-auto object-contain opacity-60"
-            />
-            <DialogTitle className="text-2xl font-bold text-primary pr-12">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-primary">
               {product.nombre}
             </DialogTitle>
           </DialogHeader>
@@ -189,31 +202,20 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
             {/* Product Image */}
             <div className="space-y-4">
               <div className="relative rounded-glass overflow-hidden">
-                {product.imagen_url ? (
-                  <img
-                    src={product.imagen_url}
-                    alt={product.nombre}
-                    className="w-full h-64 md:h-80 object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-64 md:h-80 bg-gradient-to-br from-glass/40 to-glass/20 flex items-center justify-center">
-                    <div className="text-muted-foreground">Sin imagen disponible</div>
-                  </div>
-                )}
+                <div className="w-full h-64 md:h-80 bg-gradient-to-br from-glass/40 to-glass/20 flex items-center justify-center">
+                  <div className="text-muted-foreground">Sin imagen disponible</div>
+                </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-glass-shadow/40 to-transparent" />
               </div>
 
-              {/* Categories */}
+              {/* Category */}
               <div className="flex flex-wrap gap-2">
-                {product.categoria.map((cat) => (
-                  <Badge 
-                    key={cat}
-                    variant="secondary"
-                    className="glass-card"
-                  >
-                    {cat}
-                  </Badge>
-                ))}
+                <Badge 
+                  variant="secondary"
+                  className="glass-card"
+                >
+                  {product.categoria}
+                </Badge>
               </div>
             </div>
 
@@ -228,89 +230,117 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
               </div>
 
               {/* Pricing Options */}
-              {getWeightOptions().length > 0 && (
+              {product.disponible && getWeightOptions().length > 0 && (
                 <div>
                   <h4 className="font-semibold text-foreground mb-3">
-                    {isFlores ? 'Opciones de Peso' : 'Opciones de Compra'}
+                    {isFlores ? 'Selecciona Presentación' : 'Opciones de Compra'}
                   </h4>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className={`grid gap-2 ${isFlores ? 'grid-cols-3' : 'grid-cols-2'}`}>
                     {getWeightOptions().map((option) => (
                       <button
                         key={option.key}
                         onClick={() => {
-                          setSelectedWeight(option.key as any);
-                          if (option.key !== 'pieza') setPieceQuantity(1);
+                          setSelectedWeight(option.key as WeightType);
+                          if (option.key !== 'gramo') {
+                            setQuantity(1);
+                          }
                         }}
-                        className={`glass-card rounded-glass p-3 text-center transition-glass border ${
+                        className={`glass-card rounded-glass p-3 text-center transition-all duration-300 border transform hover:scale-105 active:scale-95 hover:shadow-lg ${
                           selectedWeight === option.key
-                            ? 'border-primary bg-primary/10'
-                            : 'border-glass-border/30 hover:border-primary/50'
-                        }`}
+                            ? 'border-primary bg-primary/10 shadow-primary/20'
+                            : 'border-glass-border/30 hover:border-primary/50 hover:bg-primary/5'
+                        } ${isFlores ? 'text-xs' : ''}`}
                       >
-                        <div className="font-medium text-foreground">{option.label}</div>
-                        <div className="text-primary font-bold">${option.price}</div>
+                        <div className={`font-medium text-foreground ${isFlores ? 'text-xs' : 'text-sm'}`}>
+                          {option.label}
+                        </div>
+                        <div className={`text-primary font-bold ${isFlores ? 'text-xs' : 'text-sm'}`}>
+                          {option.key === 'gramo' 
+                            ? `$${(option.price || 0).toLocaleString('es-MX')}/g`
+                            : `$${(option.price || 0).toLocaleString('es-MX')}`
+                          }
+                        </div>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Piece Selection for Special Products */}
-              {selectedWeight === 'pieza' && hasPerPiece && (
+              {/* Quantity Selection for Grams */}
+              {product.disponible && selectedWeight === 'gramo' && (
                 <div className="glass-card rounded-glass p-4">
-                  <h4 className="font-semibold text-foreground mb-3">Cantidad de Piezas</h4>
+                  <h4 className="font-semibold text-foreground mb-3">Cantidad en Gramos</h4>
                   <div className="flex items-center space-x-3">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setPieceQuantity(Math.max(1, pieceQuantity - 1))}
-                      className="glass-card border-glass-border/30"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="glass-card border-glass-border/30 transform transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-primary/10"
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-4 h-4 transition-transform duration-200 hover:rotate-90" />
                     </Button>
                     <Input
                       type="number"
-                      value={pieceQuantity}
-                      onChange={(e) => setPieceQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      value={quantity}
+                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                       className="w-20 text-center glass-card border-glass-border/30"
                       min="1"
                     />
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setPieceQuantity(pieceQuantity + 1)}
-                      className="glass-card border-glass-border/30"
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="glass-card border-glass-border/30 transform transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-primary/10"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-4 h-4 transition-transform duration-200 hover:rotate-90" />
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Precio por pieza: ${product.precio_por_pieza}
+                    Precio por gramo: ${(product.precio_gramo || 0).toLocaleString('es-MX')}
                   </p>
                 </div>
               )}
 
               {/* Price and Actions */}
-              <div className="glass-card rounded-glass p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">
-                    {selectedWeight === 'pieza' ? `Total (${pieceQuantity} piezas)` :
-                     selectedWeight === 'gramo' ? `Total (${quantity}g)` : 'Precio'}
-                  </span>
-                  <span className="text-3xl font-bold text-primary">
-                    ${getCurrentPrice().toLocaleString('es-MX')}
-                  </span>
+              {product.disponible && getWeightOptions().length > 0 && (
+                <div className="glass-card rounded-glass p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">
+                      {selectedWeight === 'gramo' ? `Total (${quantity}g)` : 
+                       selectedWeight === 'media_onza' ? 'Precio (Media Onza)' :
+                       selectedWeight === 'onza' ? 'Precio (Onza)' :
+                       'Precio'}
+                    </span>
+                    <span className="text-3xl font-bold text-primary">
+                      ${getCurrentPrice().toLocaleString('es-MX')}
+                    </span>
+                  </div>
+                  
+                  <Button 
+                    onClick={addToEstimation}
+                    className="w-full glass-button h-12 text-base font-semibold transform transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-primary/20"
+                  >
+                    <Calculator className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-12" />
+                    Agregar a Estimación
+                  </Button>
+                  
+                  <p className="text-xs text-muted-foreground text-center">
+                    * Esto es solo una estimación de precios, no una compra real
+                  </p>
                 </div>
-                
-                <Button 
-                  className="w-full glass-button h-12 text-base font-semibold"
-                  onClick={handleAddToCart}
-                  disabled={!product.activo}
-                >
-                  <Calculator className="w-5 h-5 mr-2" />
-                  {product.activo ? 'Agregar a Precio Estimado' : 'No Disponible'}
-                </Button>
-              </div>
+              )}
+
+              {/* Unavailable Notice */}
+              {!product.disponible && (
+                <div className="glass-card rounded-glass p-4 text-center">
+                  <Badge variant="destructive" className="text-lg px-4 py-2 mb-4">
+                    Producto Agotado
+                  </Badge>
+                  <p className="text-sm text-muted-foreground">
+                    Este producto no está disponible actualmente. Contáctanos para más información.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>

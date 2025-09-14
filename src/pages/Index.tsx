@@ -53,24 +53,24 @@ const Index = () => {
               <img 
                 src={logoBanner} 
                 alt="Magia Buena Logo" 
-                className="h-16 sm:h-20 md:h-28 w-auto object-contain opacity-90 animate-fade-in-up shadow-glow"
+                className="h-12 md:h-16 lg:h-20 w-auto object-contain animate-float shadow-glow"
               />
             </div>
 
             {/* Tagline */}
-            <p className="text-lg sm:text-xl md:text-2xl text-foreground/90 mb-6 md:mb-8 font-medium px-4">
+            <p className="text-lg md:text-xl lg:text-2xl text-foreground/90 mb-6 md:mb-8 font-medium">
               Premium Cannabis & Parafernalia
             </p>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-10 md:mb-12 leading-relaxed px-4">
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 md:mb-12 leading-relaxed px-4">
               Descubre nuestra selección curada de productos de cannabis de la más alta calidad.
               Experiencia premium, entrega segura, y atención personalizada.
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-12 md:mb-16 px-4">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center mb-12 md:mb-16 px-4">
               <Link to="/catalogo" className="w-full sm:w-auto">
-                <Button size="lg" className="glass-button text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 shadow-glow w-full sm:w-auto">
-                  <ShoppingCart className="w-5 sm:w-6 h-5 sm:h-6 mr-2 sm:mr-3" />
+                <Button size="lg" className="glass-button text-base md:text-lg px-6 md:px-8 py-3 md:py-4 shadow-glow w-full sm:w-auto">
+                  <ShoppingCart className="w-5 md:w-6 h-5 md:h-6 mr-2 md:mr-3" />
                   Explorar Catálogo
                 </Button>
               </Link>
@@ -78,16 +78,16 @@ const Index = () => {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="glass-card border-glass-border/40 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 hover:border-primary/50 w-full sm:w-auto"
+                  className="glass-card border-glass-border/40 text-base md:text-lg px-6 md:px-8 py-3 md:py-4 hover:border-primary/50 w-full sm:w-auto"
                 >
-                  <Leaf className="w-5 sm:w-6 h-5 sm:h-6 mr-2 sm:mr-3" />
+                  <Leaf className="w-5 md:w-6 h-5 md:h-6 mr-2 md:mr-3" />
                   Contactar
                 </Button>
               </Link>
             </div>
 
             {/* Features */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto px-4">
               {[
                 { icon: Shield, title: 'Calidad Premium', desc: 'Productos certificados' },
                 { icon: Truck, title: 'Entrega Rápida', desc: 'Mismo día en CDMX' },
@@ -100,10 +100,10 @@ const Index = () => {
                     className="glass-card rounded-glass p-4 md:p-6 text-center animate-fade-in-up"
                     style={{ animationDelay: `${0.2 + index * 0.1}s` }}
                   >
-                    <div className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 md:mb-4 bg-glass/20 rounded-full flex items-center justify-center">
-                      <Icon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                    <div className="w-10 md:w-12 h-10 md:h-12 mx-auto mb-3 md:mb-4 bg-glass/20 rounded-full flex items-center justify-center">
+                      <Icon className="w-5 md:w-6 h-5 md:h-6 text-primary" />
                     </div>
-                    <h3 className="font-semibold text-foreground mb-1 md:mb-2 text-sm md:text-base">{feature.title}</h3>
+                    <h3 className="font-semibold text-sm md:text-base text-foreground mb-2">{feature.title}</h3>
                     <p className="text-xs md:text-sm text-muted-foreground">{feature.desc}</p>
                   </div>
                 );
@@ -119,28 +119,28 @@ const Index = () => {
       </section>
 
       {/* Sugeridos Section */}
-      <section id="sugeridos" className="py-16 md:py-20 bg-gradient-to-b from-transparent to-glass/10">
+      <section id="sugeridos" className="py-20 bg-gradient-to-b from-transparent to-glass/10">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-10 md:mb-12 animate-fade-in-up">
-            <div className="flex items-center justify-center mb-4 md:mb-6">
+          <div className="text-center mb-12 animate-fade-in-up">
+            <div className="flex items-center justify-center mb-6">
               <img 
                 src={logoBanner} 
                 alt="Magia Buena Banner" 
-                className="h-10 md:h-12 w-auto object-contain opacity-80"
+                className="h-16 w-auto object-contain"
               />
             </div>
-            <div className="flex items-center justify-center mb-3 md:mb-4">
-              <Sparkles className="w-6 md:w-8 h-6 md:h-8 text-primary mr-2 md:mr-3 animate-float" />
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
+            <div className="flex items-center justify-center mb-4">
+              <Sparkles className="w-8 h-8 text-primary mr-3 animate-float" />
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">
                 Productos Sugeridos
               </h2>
             </div>
-            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Nuestra selección especialmente curada de productos recomendados para ti.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10 md:mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
             {featuredProducts.map((product, index) => (
               <ProductCard 
                 key={product.id} 
@@ -152,9 +152,9 @@ const Index = () => {
 
           <div className="text-center animate-fade-in-up">
             <Link to="/catalogo">
-              <Button size="lg" variant="outline" className="glass-card border-glass-border/40 text-sm md:text-base px-6 md:px-8 py-3 md:py-4">
+              <Button size="lg" variant="outline" className="glass-card border-glass-border/40">
                 Ver Todo el Catálogo
-                <ArrowRight className="w-4 md:w-5 h-4 md:h-5 ml-2" />
+                <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
           </div>
