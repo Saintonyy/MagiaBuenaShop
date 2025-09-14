@@ -20,9 +20,10 @@ const Header = () => {
         
         const categoryList = data?.map(item => item.categoria)
           .filter(Boolean)
-          .filter(cat => cat !== 'psicodelico') || [];
-        // Set specific categories for the new menu structure
-        setCategories(['flores', 'pre-rolls', 'vapes', 'parafernalia', 'importado']);
+          .filter(cat => cat !== 'psicodelico') // Filtrar psicodelico si existe
+          .sort() || []; // Ordenar alfabéticamente
+        
+        setCategories(categoryList);
       } catch (error) {
         console.error('Error fetching categories:', error);
         // Fallback to default categories
@@ -35,7 +36,10 @@ const Header = () => {
 
   const getCatalogItems = () => {
     return categories.map(cat => ({
-      name: cat === 'pre-rolls' ? 'Pre-Roll\'s' : cat.charAt(0).toUpperCase() + cat.slice(1),
+      name: cat === 'pre-rolls' ? 'Pre-Roll\'s' : 
+            cat === 'flores' ? 'Flores' :
+            cat === 'parafernalia' ? 'Parafernalia' :
+            cat.charAt(0).toUpperCase() + cat.slice(1),
       href: `/catalogo?category=${cat}`
     }));
   };

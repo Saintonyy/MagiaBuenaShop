@@ -3,7 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Calculator, Plus, Minus } from 'lucide-react';
+import { Calculator, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
+import { useToast } from '@/hooks/use-toast';
 
 // Product interface matching productos table
 interface Product {
@@ -14,6 +16,7 @@ interface Product {
   precio_gramo?: number;
   precio_onza?: number;
   precio_media_onza?: number;
+  precio_pieza?: number;
   disponible: boolean;
   cantidad_disponible?: number;
 }
@@ -23,34 +26,26 @@ interface DynamicProductCardProps {
   className?: string;
 }
 
-// Local storage for price estimation
-const ESTIMATION_KEY = 'magiabuena_price_estimation';
-
-const getEstimation = () => {
-  try {
-    return JSON.parse(localStorage.getItem(ESTIMATION_KEY) || '[]');
-  } catch {
-    return [];
-  }
-};
-
-const saveEstimation = (items: any[]) => {
-  localStorage.setItem(ESTIMATION_KEY, JSON.stringify(items));
-};
-
-type WeightType = 'gramo' | 'media_onza' | 'onza' | 'unidad';
+type PriceType = 'gramo' | 'media_onza' | 'onza' | 'unidad' | 'pieza';
 
 const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [selectedWeight, setSelectedWeight] = useState<WeightType>(() => {
+  const [selectedPrice, setSelectedPrice] = useState<PriceType>(() => {
     // Default to the first available option
-    if (product.precio_gramo) return 'gramo';
-    if (product.precio_unidad) return 'unidad';
-    if (product.precio_onza) return 'onza';
-    if (product.precio_media_onza) return 'media_onza';
+    if (product.categoria === 'flores') {
+      if (product.precio_gramo) return 'gramo';
+      if (product.precio_onza) return 'onza';
+      if (product.precio_media_onza) return 'media_onza';
+    } else {
+      if (product.precio_unidad) return 'unidad';
+      if (product.precio_pieza) return 'pieza';
+    }
     return 'unidad';
   });
+
+  const { addItem } = useCart();
+  const { toast } = useToast();
 
   const isFlores = product.categoria === 'flores';
   
@@ -61,7 +56,6 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
   // Get main price display
   const getMainPrice = () => {
     if (isFlores) {
-      // For flores, show the most relevant price
       if (product.precio_gramo) {
         return `$${(product.precio_gramo || 0).toLocaleString('es-MX')}/g`;
       }
@@ -69,66 +63,87 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
         return `$${(product.precio_onza || 0).toLocaleString('es-MX')}/oz`;
       }
     } else {
-      // For others, main price is unidad
-      return `$${(product.precio_unidad || 0).toLocaleString('es-MX')}`;
+      if (product.precio_unidad) {
+        return `$${(product.precio_unidad || 0).toLocaleString('es-MX')}`;
+      }
     }
     return `$${(product.precio_unidad || 0).toLocaleString('es-MX')}`;
   };
 
   const getCurrentPrice = () => {
-    switch (selectedWeight) {
+    switch (selectedPrice) {
       case 'onza':
         return product.precio_onza || 0;
       case 'media_onza':
         return product.precio_media_onza || 0;
       case 'gramo':
-        return (product.precio_gramo || 0) * quantity;
+        return product.precio_gramo || 0;
+      case 'pieza':
+        return product.precio_pieza || 0;
       case 'unidad':
       default:
         return product.precio_unidad || 0;
     }
   };
 
-  const getQuantity = () => {
-    if (selectedWeight === 'gramo') return quantity;
+  const getQuantityToAdd = () => {
+    // Solo gramo permite cantidad variable
+    if (selectedPrice === 'gramo') return quantity;
     return 1;
   };
 
-  const addToEstimation = () => {
-    const unitPrice = selectedWeight === 'gramo' ? (product.precio_gramo || 0) : getCurrentPrice();
-    const itemQuantity = getQuantity();
+  const addToCart = () => {
+    const unitPrice = getCurrentPrice();
+    const quantityToAdd = getQuantityToAdd();
     
-    const estimation = getEstimation();
-    const newItem = {
-      id: product.id + '_' + selectedWeight,
+    addItem({
+      productId: product.id,
       name: product.nombre,
-      option: selectedWeight,
-      quantity: itemQuantity,
+      category: product.categoria,
+      priceType: selectedPrice,
       unitPrice: unitPrice,
-      total: getCurrentPrice()
-    };
+      quantity: quantityToAdd
+    });
     
-    const existingIndex = estimation.findIndex((item: any) => item.id === newItem.id);
-    if (existingIndex >= 0) {
-      estimation[existingIndex].quantity += newItem.quantity;
-      estimation[existingIndex].total = estimation[existingIndex].quantity * estimation[existingIndex].unitPrice;
-    } else {
-      estimation.push(newItem);
-    }
+    toast({
+      title: "Agregado a la calculadora",
+      description: `${product.nombre} - ${getPriceTypeLabel(selectedPrice)}`,
+    });
     
-    saveEstimation(estimation);
     setIsOpen(false);
-    alert(`Agregado al cálculo: ${product.nombre} - ${selectedWeight}`);
+    setQuantity(1); // Reset quantity
   };
 
-  const getWeightOptions = () => {
+  const getPriceTypeLabel = (priceType: PriceType) => {
+    switch (priceType) {
+      case 'gramo': return 'Gramo';
+      case 'media_onza': return 'Media Onza';
+      case 'onza': return 'Onza';
+      case 'unidad': return 'Unidad';
+      case 'pieza': return 'Pieza';
+      default: return priceType;
+    }
+  };
+
+  const getPriceOptions = () => {
     const options = [];
     if (isFlores) {
-      if (product.precio_gramo) options.push({ key: 'gramo', label: 'GRAMO', price: product.precio_gramo });
-      if (product.precio_media_onza) options.push({ key: 'media_onza', label: 'Media Onza', price: product.precio_media_onza });
-      if (product.precio_onza) options.push({ key: 'onza', label: 'Onza', price: product.precio_onza });
+      if (product.precio_gramo && product.precio_gramo > 0) {
+        options.push({ key: 'gramo' as PriceType, label: 'GRAMO', price: product.precio_gramo });
+      }
+      if (product.precio_media_onza && product.precio_media_onza > 0) {
+        options.push({ key: 'media_onza' as PriceType, label: 'Media Onza', price: product.precio_media_onza });
+      }
+      if (product.precio_onza && product.precio_onza > 0) {
+        options.push({ key: 'onza' as PriceType, label: 'Onza', price: product.precio_onza });
+      }
     } else {
-      if (product.precio_unidad) options.push({ key: 'unidad', label: 'Unidad', price: product.precio_unidad });
+      if (product.precio_unidad && product.precio_unidad > 0) {
+        options.push({ key: 'unidad' as PriceType, label: 'Unidad', price: product.precio_unidad });
+      }
+      if (product.precio_pieza && product.precio_pieza > 0) {
+        options.push({ key: 'pieza' as PriceType, label: 'Pieza', price: product.precio_pieza });
+      }
     }
     return options;
   };
@@ -230,23 +245,23 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
               </div>
 
               {/* Pricing Options */}
-              {product.disponible && getWeightOptions().length > 0 && (
+              {product.disponible && getPriceOptions().length > 0 && (
                 <div>
                   <h4 className="font-semibold text-foreground mb-3">
                     {isFlores ? 'Selecciona Presentación' : 'Opciones de Compra'}
                   </h4>
                   <div className={`grid gap-2 ${isFlores ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                    {getWeightOptions().map((option) => (
+                    {getPriceOptions().map((option) => (
                       <button
                         key={option.key}
                         onClick={() => {
-                          setSelectedWeight(option.key as WeightType);
+                          setSelectedPrice(option.key);
                           if (option.key !== 'gramo') {
                             setQuantity(1);
                           }
                         }}
                         className={`glass-card rounded-glass p-3 text-center transition-all duration-300 border transform hover:scale-105 active:scale-95 hover:shadow-lg ${
-                          selectedWeight === option.key
+                          selectedPrice === option.key
                             ? 'border-primary bg-primary/10 shadow-primary/20'
                             : 'border-glass-border/30 hover:border-primary/50 hover:bg-primary/5'
                         } ${isFlores ? 'text-xs' : ''}`}
@@ -267,7 +282,7 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
               )}
 
               {/* Quantity Selection for Grams */}
-              {product.disponible && selectedWeight === 'gramo' && (
+              {product.disponible && selectedPrice === 'gramo' && (
                 <div className="glass-card rounded-glass p-4">
                   <h4 className="font-semibold text-foreground mb-3">Cantidad en Gramos</h4>
                   <div className="flex items-center space-x-3">
@@ -302,26 +317,27 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
               )}
 
               {/* Price and Actions */}
-              {product.disponible && getWeightOptions().length > 0 && (
+              {product.disponible && getPriceOptions().length > 0 && (
                 <div className="glass-card rounded-glass p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">
-                      {selectedWeight === 'gramo' ? `Total (${quantity}g)` : 
-                       selectedWeight === 'media_onza' ? 'Precio (Media Onza)' :
-                       selectedWeight === 'onza' ? 'Precio (Onza)' :
+                      {selectedPrice === 'gramo' ? `Total (${quantity}g)` : 
+                       selectedPrice === 'media_onza' ? 'Precio (Media Onza)' :
+                       selectedPrice === 'onza' ? 'Precio (Onza)' :
+                       selectedPrice === 'pieza' ? 'Precio (Pieza)' :
                        'Precio'}
                     </span>
                     <span className="text-3xl font-bold text-primary">
-                      ${getCurrentPrice().toLocaleString('es-MX')}
+                      ${(selectedPrice === 'gramo' ? getCurrentPrice() * quantity : getCurrentPrice()).toLocaleString('es-MX')}
                     </span>
                   </div>
                   
                   <Button 
-                    onClick={addToEstimation}
+                    onClick={addToCart}
                     className="w-full glass-button h-12 text-base font-semibold transform transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-primary/20"
                   >
-                    <Calculator className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-12" />
-                    Agregar a Estimación
+                    <ShoppingCart className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-12" />
+                    Agregar a Calculadora
                   </Button>
                   
                   <p className="text-xs text-muted-foreground text-center">

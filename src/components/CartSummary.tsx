@@ -1,70 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Calculator, Plus, Minus, ShoppingCart, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  category: string;
-}
+import { useCart } from '@/contexts/CartContext';
 
 const CartSummary = () => {
+  const { items, removeItem, updateQuantity, clearCart, getTotal, getItemCount } = useCart();
   const [isOpen, setIsOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [total, setTotal] = useState(0);
-
-  // Calculate total whenever cart items change
-  useEffect(() => {
-    const newTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    setTotal(newTotal);
-  }, [cartItems]);
-
-  const addItem = (item: Omit<CartItem, 'quantity'>) => {
-    setCartItems(prev => {
-      const existingItem = prev.find(cartItem => cartItem.id === item.id);
-      if (existingItem) {
-        return prev.map(cartItem =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
-      }
-      return [...prev, { ...item, quantity: 1 }];
-    });
-  };
-
-  const removeItem = (id: string) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  const updateQuantity = (id: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      removeItem(id);
-      return;
-    }
-    setCartItems(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
-
-  const clearCart = () => {
-    setCartItems([]);
-  };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-MX', {
       style: 'currency',
-      currency: 'EUR'
+      currency: 'MXN'
     }).format(price);
   };
 
-  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const itemCount = getItemCount();
+  const total = getTotal();
+
+  const getPriceTypeLabel = (priceType: string) => {
+    switch (priceType) {
+      case 'gramo': return 'por gramo';
+      case 'media_onza': return 'media onza';
+      case 'onza': return 'onza';
+      case 'unidad': return 'unidad';
+      case 'pieza': return 'pieza';
+      default: return priceType;
+    }
+  };
 
   return (
     <div className="relative">
@@ -109,7 +73,7 @@ const CartSummary = () => {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              {cartItems.length === 0 ? (
+              {items.length === 0 ? (
                 <div className="text-center py-8">
                   <Calculator className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-sm text-muted-foreground">
@@ -123,7 +87,7 @@ const CartSummary = () => {
                 <>
                   {/* Cart Items */}
                   <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {cartItems.map((item) => (
+                    {items.map((item) => (
                       <div
                         key={item.id}
                         className="flex items-center justify-between p-3 glass-card-subtle rounded-xl"
@@ -133,7 +97,7 @@ const CartSummary = () => {
                             {item.name}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            {formatPrice(item.price)} c/u
+                            {formatPrice(item.unitPrice)} {getPriceTypeLabel(item.priceType)}
                           </p>
                         </div>
                         
@@ -196,8 +160,8 @@ const CartSummary = () => {
                       className="flex-1 glass-button-interactive"
                       onClick={() => {
                         // Here you could integrate with a contact form or WhatsApp
-                        const message = `Hola! Me interesa:\n\n${cartItems.map(item => 
-                          `• ${item.name} x${item.quantity} - ${formatPrice(item.price * item.quantity)}`
+                        const message = `Hola! Me interesa:\n\n${items.map(item => 
+                          `• ${item.name} (${getPriceTypeLabel(item.priceType)}) x${item.quantity} - ${formatPrice(item.total)}`
                         ).join('\n')}\n\nTotal: ${formatPrice(total)}`;
                         
                         const whatsappUrl = `https://wa.me/1234567890?text=${encodeURIComponent(message)}`;
