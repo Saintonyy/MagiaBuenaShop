@@ -5,7 +5,7 @@ export interface CartItem {
   productId: string;
   name: string;
   category: string;
-  priceType: 'gramo' | 'media_onza' | 'onza' | 'unidad' | 'pieza';
+  priceType: 'media_onza' | 'onza' | 'unidad' | 'pieza';
   unitPrice: number;
   quantity: number;
   total: number;

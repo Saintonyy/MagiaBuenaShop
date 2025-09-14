@@ -21,7 +21,6 @@ const CartSummary = () => {
 
   const getPriceTypeLabel = (priceType: string) => {
     switch (priceType) {
-      case 'gramo': return 'por gramo';
       case 'media_onza': return 'media onza';
       case 'onza': return 'onza';
       case 'unidad': return 'unidad';

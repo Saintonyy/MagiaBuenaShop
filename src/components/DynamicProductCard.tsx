@@ -26,7 +26,7 @@ interface DynamicProductCardProps {
   className?: string;
 }
 
-type PriceType = 'gramo' | 'media_onza' | 'onza' | 'unidad' | 'pieza';
+type PriceType = 'media_onza' | 'onza' | 'unidad' | 'pieza';
 
 const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -34,7 +34,6 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
   const [selectedPrice, setSelectedPrice] = useState<PriceType>(() => {
     // Default to the first available option
     if (product.categoria === 'flores') {
-      if (product.precio_gramo) return 'gramo';
       if (product.precio_onza) return 'onza';
       if (product.precio_media_onza) return 'media_onza';
     } else {
@@ -56,11 +55,12 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
   // Get main price display
   const getMainPrice = () => {
     if (isFlores) {
-      if (product.precio_gramo) {
-        return `$${(product.precio_gramo || 0).toLocaleString('es-MX')}/g`;
-      }
+      // Para flores, mostrar siempre el precio por onza como principal
       if (product.precio_onza) {
-        return `$${(product.precio_onza || 0).toLocaleString('es-MX')}/oz`;
+        return `$${(product.precio_onza || 0).toLocaleString('es-MX')}`;
+      }
+      if (product.precio_media_onza) {
+        return `$${(product.precio_media_onza || 0).toLocaleString('es-MX')}`;
       }
     } else {
       if (product.precio_unidad) {
@@ -76,8 +76,6 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
         return product.precio_onza || 0;
       case 'media_onza':
         return product.precio_media_onza || 0;
-      case 'gramo':
-        return product.precio_gramo || 0;
       case 'pieza':
         return product.precio_pieza || 0;
       case 'unidad':
@@ -87,8 +85,7 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
   };
 
   const getQuantityToAdd = () => {
-    // Solo gramo permite cantidad variable
-    if (selectedPrice === 'gramo') return quantity;
+    // Para flores, siempre cantidad 1 (onza o media onza)
     return 1;
   };
 
@@ -116,7 +113,6 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
 
   const getPriceTypeLabel = (priceType: PriceType) => {
     switch (priceType) {
-      case 'gramo': return 'Gramo';
       case 'media_onza': return 'Media Onza';
       case 'onza': return 'Onza';
       case 'unidad': return 'Unidad';
@@ -128,14 +124,12 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
   const getPriceOptions = () => {
     const options = [];
     if (isFlores) {
-      if (product.precio_gramo && product.precio_gramo > 0) {
-        options.push({ key: 'gramo' as PriceType, label: 'GRAMO', price: product.precio_gramo });
+      // Solo mostrar precio_onza y precio_media_onza para flores
+      if (product.precio_onza && product.precio_onza > 0) {
+        options.push({ key: 'onza' as PriceType, label: 'Onza', price: product.precio_onza });
       }
       if (product.precio_media_onza && product.precio_media_onza > 0) {
         options.push({ key: 'media_onza' as PriceType, label: 'Media Onza', price: product.precio_media_onza });
-      }
-      if (product.precio_onza && product.precio_onza > 0) {
-        options.push({ key: 'onza' as PriceType, label: 'Onza', price: product.precio_onza });
       }
     } else {
       if (product.precio_unidad && product.precio_unidad > 0) {
@@ -250,69 +244,28 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
                   <h4 className="font-semibold text-foreground mb-3">
                     {isFlores ? 'Selecciona Presentación' : 'Opciones de Compra'}
                   </h4>
-                  <div className={`grid gap-2 ${isFlores ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  <div className={`grid gap-2 ${isFlores ? 'grid-cols-2' : 'grid-cols-2'}`}>
                     {getPriceOptions().map((option) => (
                       <button
                         key={option.key}
                         onClick={() => {
                           setSelectedPrice(option.key);
-                          if (option.key !== 'gramo') {
-                            setQuantity(1);
-                          }
                         }}
                         className={`glass-card rounded-glass p-3 text-center transition-all duration-300 border transform hover:scale-105 active:scale-95 hover:shadow-lg ${
                           selectedPrice === option.key
                             ? 'border-primary bg-primary/10 shadow-primary/20'
                             : 'border-glass-border/30 hover:border-primary/50 hover:bg-primary/5'
-                        } ${isFlores ? 'text-xs' : ''}`}
+                        }`}
                       >
-                        <div className={`font-medium text-foreground ${isFlores ? 'text-xs' : 'text-sm'}`}>
+                        <div className="font-medium text-foreground text-sm">
                           {option.label}
                         </div>
-                        <div className={`text-primary font-bold ${isFlores ? 'text-xs' : 'text-sm'}`}>
-                          {option.key === 'gramo' 
-                            ? `$${(option.price || 0).toLocaleString('es-MX')}/g`
-                            : `$${(option.price || 0).toLocaleString('es-MX')}`
-                          }
+                        <div className="text-primary font-bold text-sm">
+                          ${(option.price || 0).toLocaleString('es-MX')}
                         </div>
                       </button>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* Quantity Selection for Grams */}
-              {product.disponible && selectedPrice === 'gramo' && (
-                <div className="glass-card rounded-glass p-4">
-                  <h4 className="font-semibold text-foreground mb-3">Cantidad en Gramos</h4>
-                  <div className="flex items-center space-x-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="glass-card border-glass-border/30 transform transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-primary/10"
-                    >
-                      <Minus className="w-4 h-4 transition-transform duration-200 hover:rotate-90" />
-                    </Button>
-                    <Input
-                      type="number"
-                      value={quantity}
-                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-20 text-center glass-card border-glass-border/30"
-                      min="1"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="glass-card border-glass-border/30 transform transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-primary/10"
-                    >
-                      <Plus className="w-4 h-4 transition-transform duration-200 hover:rotate-90" />
-                    </Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Precio por gramo: ${(product.precio_gramo || 0).toLocaleString('es-MX')}
-                  </p>
                 </div>
               )}
 
@@ -321,14 +274,13 @@ const DynamicProductCard = ({ product, className = '' }: DynamicProductCardProps
                 <div className="glass-card rounded-glass p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">
-                      {selectedPrice === 'gramo' ? `Total (${quantity}g)` : 
-                       selectedPrice === 'media_onza' ? 'Precio (Media Onza)' :
+                      {selectedPrice === 'media_onza' ? 'Precio (Media Onza)' :
                        selectedPrice === 'onza' ? 'Precio (Onza)' :
                        selectedPrice === 'pieza' ? 'Precio (Pieza)' :
                        'Precio'}
                     </span>
                     <span className="text-3xl font-bold text-primary">
-                      ${(selectedPrice === 'gramo' ? getCurrentPrice() * quantity : getCurrentPrice()).toLocaleString('es-MX')}
+                      ${getCurrentPrice().toLocaleString('es-MX')}
                     </span>
                   </div>
                   
