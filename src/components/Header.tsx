@@ -7,7 +7,8 @@ import ProductFilters from '@/components/ProductFilters';
 import { useDropdownPosition } from '@/hooks/use-dropdown-position';
 import { useClickOutside } from '@/hooks/use-click-outside';
 import logo from '@/assets/logo.png';
-import logoBanner from '@/assets/logo-banner.png';
+// import logoBanner from '@/assets/logo-banner.png'; // ❌ no usado
+import { openTelegramByPhone } from '@/lib/openTelegram';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,14 +18,14 @@ const Header = () => {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   // Refs for dropdown positioning
   const catalogDropdownRef = useRef<HTMLDivElement>(null);
   const catalogTriggerRef = useRef<HTMLButtonElement>(null);
-  
+
   // Smart dropdown positioning
   const catalogPosition = useDropdownPosition(isCatalogOpen, catalogDropdownRef, catalogTriggerRef);
-  
+
   // Close dropdown when clicking outside
   useClickOutside(isCatalogOpen, setIsCatalogOpen, [catalogDropdownRef, catalogTriggerRef]);
 
@@ -33,16 +34,17 @@ const Header = () => {
     const loadCategories = async () => {
       try {
         const data = await fetchCategorias();
-        
-        const categoryList = data?.map(item => item.categoria)
-          .filter(Boolean)
-          .filter(cat => cat !== 'psicodelico') // Filtrar psicodelico si existe
-          .sort() || []; // Ordenar alfabéticamente
-        
+
+        const categoryList =
+          data?.map((item) => item.categoria)
+            .filter(Boolean)
+            .filter((cat) => cat !== 'psicodelico') // Filtrar psicodelico si existe
+            .sort() || []; // Ordenar alfabéticamente
+
         setCategories(categoryList);
       } catch (error) {
         console.error('Error fetching categories:', error);
-        // Fallback to default categories
+        // Fallback a categorías por defecto
         setCategories(['flores', 'pre-rolls', 'vapes', 'parafernalia', 'importado']);
       }
     };
@@ -51,33 +53,28 @@ const Header = () => {
   }, []);
 
   const getCatalogItems = () => {
-    return categories.map(cat => ({
-      name: cat === 'pre-rolls' ? 'Pre-Roll\'s' : 
-            cat === 'flores' ? 'Flores' :
-            cat === 'parafernalia' ? 'Parafernalia' :
-            cat.charAt(0).toUpperCase() + cat.slice(1),
+    return categories.map((cat) => ({
+      name:
+        cat === 'pre-rolls'
+          ? "Pre-Roll's"
+          : cat === 'flores'
+          ? 'Flores'
+          : cat === 'parafernalia'
+          ? 'Parafernalia'
+          : cat.charAt(0).toUpperCase() + cat.slice(1),
       href: `/catalogo?category=${cat}`,
-      category: cat
+      category: cat,
     }));
   };
 
   const handleCategoryNavigation = (category: string, href: string) => {
-    // Cerrar el dropdown
     setIsCatalogOpen(false);
     setIsMenuOpen(false);
-    
-    // Navegar siempre, incluso si ya estamos en la página de catálogo
     navigate(href, { replace: true });
-    
-    // Scroll automático al top (especificación de memoria)
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleFiltersChange = (filters: any) => {
-    // Esta función se puede implementar según las necesidades específicas
     console.log('Filters changed:', filters);
   };
 
@@ -86,21 +83,18 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link 
-            to="/" 
-            className="flex items-center space-x-3 group transition-glass hover:scale-105"
-          >
-            <img 
-              src={logo} 
-              alt="Magia Buena Logo" 
+          <Link to="/" className="flex items-center space-x-3 group transition-glass hover:scale-105">
+            <img
+              src={logo}
+              alt="Magia Buena Logo"
               className="h-12 w-auto object-contain filter brightness-0 invert group-hover:brightness-100 group-hover:invert-0 transition-all duration-300"
             />
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className={`text-sm font-medium transition-glass hover:text-primary ${
                 location.pathname === '/' ? 'text-primary' : 'text-foreground/80'
               }`}
@@ -120,7 +114,7 @@ const Header = () => {
               </button>
 
               {isCatalogOpen && (
-                <div 
+                <div
                   ref={catalogDropdownRef}
                   className="absolute top-full left-0 sm:left-0 right-0 sm:right-auto mt-2 w-48 sm:w-48 max-w-[calc(100vw-2rem)] backdrop-blur-md bg-background/85 supports-[backdrop-filter]:bg-background/70 border border-glass-border/30 rounded-2xl shadow-glass z-50 will-change-transform mobile-dropdown"
                   style={catalogPosition}
@@ -134,10 +128,10 @@ const Header = () => {
                     >
                       Inicio
                     </Link>
-                    
+
                     {/* Divider */}
                     <div className="border-t border-glass-border/20 my-3"></div>
-                    
+
                     {/* Categories */}
                     {getCatalogItems().map((item) => (
                       <button
@@ -148,41 +142,40 @@ const Header = () => {
                         {item.name}
                       </button>
                     ))}
-                    
+
                     {/* Divider */}
                     <div className="border-t border-glass-border/20 my-3"></div>
-                    
-                    {/* Contacto */}
-                    <Link
-                      to="/contacto"
-                      onClick={() => setIsCatalogOpen(false)}
-                      className="block px-3 py-2 text-sm text-foreground/80 hover:text-primary hover:bg-glass/20 rounded-xl transition-bounce"
+
+                    {/* Contacto → Telegram (por número) */}
+                    <button
+                      onClick={() => {
+                        setIsCatalogOpen(false);
+                        openTelegramByPhone();
+                      }}
+                      className="block w-full text-left px-3 py-2 text-sm text-foreground/80 hover:text-primary hover:bg-glass/20 rounded-xl transition-bounce"
                     >
                       Contacto
-                    </Link>
+                    </button>
                   </div>
                 </div>
               )}
             </div>
 
-            <Link 
-              to="/promociones" 
-              className={`text-sm font-medium transition-glass hover:text-primary ${
-                location.pathname === '/promociones' ? 'text-primary' : 'text-foreground/80'
-              }`}
-            >
-              Promos
-            </Link>
+            {/* Promos → Coming soon (desactivado) */}
+            <span className="text-sm font-medium text-foreground/50 cursor-not-allowed select-none">
+              Promos (coming soon)
+            </span>
 
             {/* Cart Summary */}
             <CartSummary />
 
-            <Link 
-              to="/contacto" 
+            {/* Contacto (abre Telegram) */}
+            <button
+              onClick={openTelegramByPhone}
               className="glass-button-interactive px-6 py-2 rounded-glass text-sm font-medium text-primary-foreground liquid-ripple"
             >
               Contacto
-            </Link>
+            </button>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -190,11 +183,7 @@ const Header = () => {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden glass-button-interactive p-2 rounded-glass liquid-ripple"
           >
-            {isMenuOpen ? (
-              <X className="w-6 h-6 text-primary-foreground" />
-            ) : (
-              <Menu className="w-6 h-6 text-primary-foreground" />
-            )}
+            {isMenuOpen ? <X className="w-6 h-6 text-primary-foreground" /> : <Menu className="w-6 h-6 text-primary-foreground" />}
           </button>
         </div>
 
@@ -203,17 +192,17 @@ const Header = () => {
           <div className="md:hidden mt-4 backdrop-blur-md bg-background/85 supports-[backdrop-filter]:bg-background/70 border border-glass-border/30 rounded-2xl p-6 will-change-transform">
             <nav className="flex flex-col space-y-4">
               {/* Inicio */}
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 onClick={() => setIsMenuOpen(false)}
                 className="text-sm font-medium text-foreground/80 hover:text-primary transition-bounce px-3 py-2 rounded-xl hover:bg-glass/20"
               >
                 Inicio
               </Link>
-              
+
               {/* Divider */}
               <div className="border-t border-glass-border/20"></div>
-              
+
               {/* Categories */}
               <div className="space-y-2">
                 {getCatalogItems().map((item) => (
@@ -229,13 +218,13 @@ const Header = () => {
 
               {/* Divider */}
               <div className="border-t border-glass-border/20"></div>
-              
+
               {/* Mobile Tools - Calculadora y Filtros */}
               <div className="space-y-3">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block">
                   Herramientas
                 </span>
-                
+
                 {/* Calculadora Button */}
                 <button
                   onClick={() => {
@@ -246,15 +235,15 @@ const Header = () => {
                   <Calculator className="w-4 h-4 mr-3 text-emerald-500" />
                   <span>Calculadora</span>
                 </button>
-                
+
                 {/* Calculator Dropdown */}
                 {isCalculatorOpen && (
                   <div className="ml-4 pl-4 border-l border-glass-border/20">
                     <CartSummary inline={true} />
                   </div>
                 )}
-                
-                {/* Filtros Button - Solo mostrar en páginas de catálogo */}
+
+                {/* Filtros Button (home o catálogo) */}
                 {(location.pathname.includes('/catalogo') || location.pathname === '/') && (
                   <>
                     <button
@@ -266,32 +255,29 @@ const Header = () => {
                       <Filter className="w-4 h-4 mr-3 text-blue-500" />
                       <span>Filtros</span>
                     </button>
-                    
-                    {/* Filters Dropdown */}
+
                     {isFiltersOpen && (
                       <div className="ml-4 pl-4 border-l border-glass-border/20">
-                        <ProductFilters
-                          onFiltersChange={handleFiltersChange}
-                          categories={categories}
-                          selectedCategory="all"
-                        />
+                        <ProductFilters onFiltersChange={handleFiltersChange} categories={categories} selectedCategory="all" />
                       </div>
                     )}
                   </>
                 )}
               </div>
-              
+
               {/* Divider */}
               <div className="border-t border-glass-border/20"></div>
-              
-              {/* Contacto */}
-              <Link 
-                to="/contacto" 
-                onClick={() => setIsMenuOpen(false)}
+
+              {/* Contacto (abre Telegram) */}
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  openTelegramByPhone();
+                }}
                 className="glass-button-interactive px-6 py-3 rounded-xl text-sm font-medium text-primary-foreground text-center liquid-ripple"
               >
                 Contacto
-              </Link>
+              </button>
             </nav>
           </div>
         )}

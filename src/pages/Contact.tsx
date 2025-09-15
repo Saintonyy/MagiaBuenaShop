@@ -2,13 +2,20 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MessageCircle, Instagram, Facebook, Twitter, Phone, MapPin, Clock } from 'lucide-react';
+import { useEffect } from "react";
+import { openTelegramByPhone } from "@/lib/openTelegram";
 
 const Contact = () => {
+  // Redirección automática al montar
+  useEffect(() => {
+    openTelegramByPhone();
+  }, []);
+
   const socialLinks = [
     {
       name: 'Telegram',
       icon: MessageCircle,
-      href: 'https://t.me/magiabuena',
+      onClick: () => openTelegramByPhone(),
       description: 'Chat directo para pedidos y consultas',
       primary: true,
       bgColor: 'bg-gradient-primary',
@@ -47,7 +54,8 @@ const Contact = () => {
     {
       icon: Phone,
       title: 'Teléfono',
-      info: '+1 (555) 123-4567',
+      // opcional: muestra el número bonito si lo definiste en constants
+      info: '+52 1 55 1234 5678',
       description: 'Llamadas y WhatsApp'
     },
     {
@@ -73,8 +81,7 @@ const Contact = () => {
             Contacto
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Estamos aquí para ayudarte. Elige tu método de contacto preferido
-            y te responderemos lo más pronto posible.
+            Si no se abrió Telegram automáticamente, usa los botones de abajo.
           </p>
         </div>
 
@@ -89,12 +96,11 @@ const Contact = () => {
             </h2>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
               Para pedidos, consultas y atención personalizada, contáctanos directamente por Telegram.
-              Respuesta garantizada en menos de 30 minutos.
             </p>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="glass-button text-lg px-8 py-4 shadow-glow"
-              onClick={() => window.open('https://t.me/magiabuena', '_blank')}
+              onClick={openTelegramByPhone}
             >
               <MessageCircle className="w-6 h-6 mr-3" />
               Abrir Telegram
@@ -111,7 +117,7 @@ const Contact = () => {
             {socialLinks.slice(1).map((social, index) => {
               const Icon = social.icon;
               return (
-                <Card 
+                <Card
                   key={social.name}
                   className="glass-card glass-hover border-glass-border/30 animate-fade-in-up"
                   style={{ animationDelay: `${0.1 * (index + 3)}s` }}
@@ -126,11 +132,14 @@ const Contact = () => {
                     <p className="text-sm text-muted-foreground mb-4">
                       {social.description}
                     </p>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       className="glass-card border-glass-border/30 w-full"
-                      onClick={() => window.open(social.href, '_blank')}
+                      onClick={() => {
+                        if (social.href) window.open(social.href, '_blank');
+                        if (social.onClick) social.onClick();
+                      }}
                     >
                       Seguir
                     </Button>
@@ -150,7 +159,7 @@ const Contact = () => {
             {contactInfo.map((info, index) => {
               const Icon = info.icon;
               return (
-                <Card 
+                <Card
                   key={info.title}
                   className="glass-card border-glass-border/30 animate-fade-in-up"
                   style={{ animationDelay: `${0.1 * (index + 5)}s` }}
@@ -172,51 +181,6 @@ const Contact = () => {
                 </Card>
               );
             })}
-          </div>
-        </div>
-
-        {/* FAQ Section */}
-        <div className="glass-card rounded-glass p-8 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
-          <h2 className="text-2xl font-bold text-foreground mb-6 text-center">
-            Preguntas Frecuentes
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">
-                  ¿Cómo realizo un pedido?
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Contáctanos por Telegram con los productos que deseas y te guiaremos en el proceso.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">
-                  ¿Cuál es el tiempo de entrega?
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Entregamos el mismo día en CDMX. Para otras zonas, consulta tiempos específicos.
-                </p>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">
-                  ¿Qué métodos de pago aceptan?
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Efectivo, transferencia bancaria y métodos digitales. Consulta opciones disponibles.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">
-                  ¿Tienen garantía de calidad?
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Todos nuestros productos son probados y garantizamos su calidad premium.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>

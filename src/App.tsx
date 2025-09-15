@@ -18,16 +18,15 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/catalogo" element={<DynamicCatalog />} />
-            <Route path="/promociones" element={<Promotions />} />
-            <Route path="/contacto" element={<Contact />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
+  <Routes>
+    <Route path="/" element={<Index />} />
+    <Route path="/catalogo" element={<DynamicCatalog />} />
+    <Route path="/promociones" element={<Promotions />} />
+    <Route path="/contacto" element={<Contact />} />
+    <Route path="*" element={<NotFound />} />
+  </Routes>
+</BrowserRouter>
       </TooltipProvider>
     </CartProvider>
   </QueryClientProvider>
