@@ -1,8 +1,19 @@
 import { useEffect, useState } from 'react';
 import { fetchProductos } from '../services/store';
 
+interface Product {
+  id: string;
+  nombre: string;
+  categoria: string;
+  precio_unidad?: number;
+  precio_gramo?: number;
+  precio_media_onza?: number;
+  precio_onza?: number;
+  foto_url?: string | null;
+}
+
 export default function StoreGrid({ categoria }: { categoria?: string }) {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<Product[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -10,9 +21,9 @@ export default function StoreGrid({ categoria }: { categoria?: string }) {
       try {
         const rows = await fetchProductos({ categoria });
         setItems(rows);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error('Error fetching products:', e);
-        setErr(e?.message ?? 'Error desconocido');
+        setErr((e as Error)?.message ?? 'Error desconocido');
       }
     })();
   }, [categoria]);

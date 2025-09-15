@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -96,9 +97,25 @@ export default {
             transform: "translateY(0px) rotate(0deg)",
             borderRadius: "60% 40% 30% 70% / 60% 30% 70% 40%",
           },
+          "25%": {
+            transform: "translateY(-3px) rotate(45deg)",
+            borderRadius: "45% 55% 60% 40% / 70% 35% 65% 30%",
+          },
           "50%": {
-            transform: "translateY(-10px) rotate(180deg)",
+            transform: "translateY(-6px) rotate(90deg)",
             borderRadius: "30% 60% 70% 40% / 50% 60% 30% 60%",
+          },
+          "75%": {
+            transform: "translateY(-3px) rotate(135deg)",
+            borderRadius: "55% 45% 40% 60% / 30% 65% 35% 70%",
+          },
+        },
+        "liquid-bounce": {
+          "0%, 100%": {
+            transform: "translateY(0) scale(1)",
+          },
+          "50%": {
+            transform: "translateY(-4px) scale(1.02)",
           },
         },
         "glass-shine": {
@@ -122,7 +139,8 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in-up": "fade-in-up 0.6s ease-out",
-        "liquid-flow": "liquid-flow 6s ease-in-out infinite",
+        "liquid-flow": "liquid-flow 8s ease-in-out infinite",
+        "liquid-bounce": "liquid-bounce 2s ease-in-out infinite",
         "glass-shine": "glass-shine 2s ease-in-out infinite",
         "float": "float 3s ease-in-out infinite",
       },
@@ -137,5 +155,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

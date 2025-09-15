@@ -2,10 +2,16 @@ import { supabase } from './lib/supabaseClient';
 
 export async function devSmoke() {
   try {
-    const a = await supabase.from('v_categorias').select('*').limit(3);
-    const b = await supabase.from('v_productos_publicos').select('*').limit(3);
-    if (a.error) throw a.error;
+    // Verificar v_productos_publicos
+    const b = await supabase.from('v_productos_publicos').select('*').limit(5);
     if (b.error) throw b.error;
-    console.log('[SMOKE] cats:', a.data?.length ?? 0, 'prods:', b.data?.length ?? 0);
-  } catch (e) { console.error('[SMOKE] fallo:', e); }
+    
+    console.log('[SMOKE] prods:', b.data?.length ?? 0);
+    if (b.data && b.data.length > 0) {
+      console.log('[SMOKE] primer producto:', b.data[0]);
+    }
+  } catch (e) { 
+    console.error('[SMOKE] fallo:', e); 
+    console.log('[SMOKE] Error - posiblemente la vista v_productos_publicos no existe o no tiene datos');
+  }
 }

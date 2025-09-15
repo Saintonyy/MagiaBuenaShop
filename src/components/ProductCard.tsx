@@ -4,6 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Leaf, Star, ShoppingCart } from 'lucide-react';
 
+// Función para generar fallback local por categoría
+const fallbackByCategory = (cat?: string) => {
+  const c = (cat || '').toLowerCase();
+  if (c.includes('flor')) return '/images/fallback-flor.webp';
+  if (c.includes('pre')) return '/images/fallback-preroll.webp';
+  if (c.includes('vape')) return '/images/fallback-vape.webp';
+  return '/images/fallback-default.webp';
+};
+
 interface Product {
   id: string;
   name: string;
@@ -30,19 +39,46 @@ interface ProductCardProps {
 const ProductCard = ({ product, className = '' }: ProductCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
+  
+  // Determinar la fuente de imagen con fallback
+  const getImageSrc = () => {
+    return product.image && product.image.trim() !== ''
+      ? product.image
+      : fallbackByCategory(product.category);
+  };
+  
+  const imageSrc = getImageSrc();
 
   return (
     <>
       <div 
         className={`glass-card glass-hover rounded-glass p-6 cursor-pointer group ${className}`}
         onClick={() => setIsOpen(true)}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.willChange = 'transform';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.willChange = 'auto';
+        }}
       >
         {/* Product Image */}
         <div className="relative mb-4 overflow-hidden rounded-glass">
           <img
-            src={product.image}
+            src={imageSrc}
             alt={product.name}
-            className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+            decoding="async"
+            width={320}
+            height={192}
+            className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110 will-change-auto"
+            onError={(e) => {
+              // evita loops si el fallback también falla
+              const img = e.currentTarget;
+              if (!img.dataset.fbkApplied) {
+                img.dataset.fbkApplied = '1';
+                img.src = fallbackByCategory(product.category);
+              }
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-glass-shadow/60 to-transparent" />
           
@@ -113,9 +149,21 @@ const ProductCard = ({ product, className = '' }: ProductCardProps) => {
             <div className="space-y-4">
               <div className="relative rounded-glass overflow-hidden">
                 <img
-                  src={product.image}
+                  src={imageSrc}
                   alt={product.name}
-                  className="w-full h-64 md:h-80 object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  width={400}
+                  height={320}
+                  className="w-full h-64 md:h-80 object-cover will-change-auto"
+                  onError={(e) => {
+                    // evita loops si el fallback también falla
+                    const img = e.currentTarget;
+                    if (!img.dataset.fbkApplied) {
+                      img.dataset.fbkApplied = '1';
+                      img.src = fallbackByCategory(product.category);
+                    }
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-glass-shadow/40 to-transparent" />
               </div>
