@@ -7,7 +7,7 @@ import ProductFilters from '@/components/ProductFilters';
 import { useDropdownPosition } from '@/hooks/use-dropdown-position';
 import { useClickOutside } from '@/hooks/use-click-outside';
 import logo from '@/assets/logo.png';
-// import logoBanner from '@/assets/logo-banner.png'; // ❌ no usado
+// import logoBanner from '@/assets/logo-banner.png'; // no usado
 import { openTelegramByPhone } from '@/lib/openTelegram';
 
 const Header = () => {
@@ -19,41 +19,45 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Refs for dropdown positioning
+  // Refs para posicionar el dropdown
   const catalogDropdownRef = useRef<HTMLDivElement>(null);
   const catalogTriggerRef = useRef<HTMLButtonElement>(null);
 
-  // Smart dropdown positioning
-  const catalogPosition = useDropdownPosition(isCatalogOpen, catalogDropdownRef, catalogTriggerRef);
+  // Posicionamiento inteligente
+  const catalogPosition = useDropdownPosition(
+    isCatalogOpen,
+    catalogDropdownRef,
+    catalogTriggerRef
+  );
 
-  // Close dropdown when clicking outside
-  useClickOutside(isCatalogOpen, setIsCatalogOpen, [catalogDropdownRef, catalogTriggerRef]);
+  // Cerrar dropdown al click fuera
+  useClickOutside(isCatalogOpen, setIsCatalogOpen, [
+    catalogDropdownRef,
+    catalogTriggerRef,
+  ]);
 
-  // Fetch categories from Supabase
+  // Cargar categorías desde Supabase
   useEffect(() => {
     const loadCategories = async () => {
       try {
         const data = await fetchCategorias();
-
         const categoryList =
-          data?.map((item) => item.categoria)
+          data
+            ?.map((item) => item.categoria)
             .filter(Boolean)
-            .filter((cat) => cat !== 'psicodelico') // Filtrar psicodelico si existe
-            .sort() || []; // Ordenar alfabéticamente
-
+            .filter((cat) => cat !== 'psicodelico')
+            .sort() || [];
         setCategories(categoryList);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        // Fallback a categorías por defecto
+      } catch (e) {
+        console.error('Error fetching categories:', e);
         setCategories(['flores', 'pre-rolls', 'vapes', 'parafernalia', 'importado']);
       }
     };
-
     loadCategories();
   }, []);
 
-  const getCatalogItems = () => {
-    return categories.map((cat) => ({
+  const getCatalogItems = () =>
+    categories.map((cat) => ({
       name:
         cat === 'pre-rolls'
           ? "Pre-Roll's"
@@ -65,7 +69,6 @@ const Header = () => {
       href: `/catalogo?category=${cat}`,
       category: cat,
     }));
-  };
 
   const handleCategoryNavigation = (category: string, href: string) => {
     setIsCatalogOpen(false);
@@ -83,7 +86,10 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group transition-glass hover:scale-105">
+          <Link
+            to="/"
+            className="flex items-center space-x-3 group transition-glass hover:scale-105"
+          >
             <img
               src={logo}
               alt="Magia Buena Logo"
@@ -91,7 +97,7 @@ const Header = () => {
             />
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Navegación desktop */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link
               to="/"
@@ -102,7 +108,7 @@ const Header = () => {
               Inicio
             </Link>
 
-            {/* Catalog Dropdown */}
+            {/* Catálogo (dropdown) */}
             <div className="relative">
               <button
                 ref={catalogTriggerRef}
@@ -110,7 +116,11 @@ const Header = () => {
                 className="flex items-center space-x-1 text-sm font-medium text-foreground/80 hover:text-primary transition-bounce glass-button-interactive px-3 py-2 rounded-glass"
               >
                 <span>Catálogo</span>
-                <ChevronDown className={`w-4 h-4 transition-all duration-500 ${isCatalogOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  className={`w-4 h-4 transition-all duration-500 ${
+                    isCatalogOpen ? 'rotate-180' : ''
+                  }`}
+                />
               </button>
 
               {isCatalogOpen && (
@@ -120,7 +130,6 @@ const Header = () => {
                   style={catalogPosition}
                 >
                   <div className="p-4">
-                    {/* Inicio */}
                     <Link
                       to="/"
                       onClick={() => setIsCatalogOpen(false)}
@@ -129,10 +138,8 @@ const Header = () => {
                       Inicio
                     </Link>
 
-                    {/* Divider */}
-                    <div className="border-t border-glass-border/20 my-3"></div>
+                    <div className="border-t border-glass-border/20 my-3" />
 
-                    {/* Categories */}
                     {getCatalogItems().map((item) => (
                       <button
                         key={item.name}
@@ -143,10 +150,8 @@ const Header = () => {
                       </button>
                     ))}
 
-                    {/* Divider */}
-                    <div className="border-t border-glass-border/20 my-3"></div>
+                    <div className="border-t border-glass-border/20 my-3" />
 
-                    {/* Contacto → Telegram (por número) */}
                     <button
                       onClick={() => {
                         setIsCatalogOpen(false);
@@ -161,15 +166,13 @@ const Header = () => {
               )}
             </div>
 
-            {/* Promos → Coming soon (desactivado) */}
+            {/* Promos desactivado */}
             <span className="text-sm font-medium text-foreground/50 cursor-not-allowed select-none">
               Promos (coming soon)
             </span>
 
-            {/* Cart Summary */}
             <CartSummary />
 
-            {/* Contacto (abre Telegram) */}
             <button
               onClick={openTelegramByPhone}
               className="glass-button-interactive px-6 py-2 rounded-glass text-sm font-medium text-primary-foreground liquid-ripple"
@@ -178,20 +181,27 @@ const Header = () => {
             </button>
           </nav>
 
-          {/* Mobile Menu Button */}
+          {/* Botón menú móvil */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden glass-button-interactive p-2 rounded-glass liquid-ripple"
           >
-            {isMenuOpen ? <X className="w-6 h-6 text-primary-foreground" /> : <Menu className="w-6 h-6 text-primary-foreground" />}
+            {isMenuOpen ? (
+              <X className="w-6 h-6 text-primary-foreground" />
+            ) : (
+              <Menu className="w-6 h-6 text-primary-foreground" />
+            )}
           </button>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Navegación móvil */}
         {isMenuOpen && (
           <div className="md:hidden mt-4 backdrop-blur-md bg-background/85 supports-[backdrop-filter]:bg-background/70 border border-glass-border/30 rounded-2xl p-6 will-change-transform">
-            <nav className="flex flex-col space-y-4">
-              {/* Inicio */}
+            {/* nav scrolleable */}
+            <nav
+              className="flex flex-col space-y-4 max-h-[70vh] overflow-y-auto pr-2"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
               <Link
                 to="/"
                 onClick={() => setIsMenuOpen(false)}
@@ -200,11 +210,13 @@ const Header = () => {
                 Inicio
               </Link>
 
-              {/* Divider */}
-              <div className="border-t border-glass-border/20"></div>
+              <div className="border-t border-glass-border/20" />
 
-              {/* Categories */}
-              <div className="space-y-2">
+              {/* Lista de categorías scrolleable */}
+              <div
+                className="space-y-2 max-h-[50vh] overflow-y-auto pr-1"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+              >
                 {getCatalogItems().map((item) => (
                   <button
                     key={item.name}
@@ -216,40 +228,31 @@ const Header = () => {
                 ))}
               </div>
 
-              {/* Divider */}
-              <div className="border-t border-glass-border/20"></div>
+              <div className="border-t border-glass-border/20" />
 
-              {/* Mobile Tools - Calculadora y Filtros */}
               <div className="space-y-3">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block">
                   Herramientas
                 </span>
 
-                {/* Calculadora Button */}
                 <button
-                  onClick={() => {
-                    setIsCalculatorOpen(!isCalculatorOpen);
-                  }}
+                  onClick={() => setIsCalculatorOpen(!isCalculatorOpen)}
                   className="flex items-center w-full text-left text-sm text-foreground/80 hover:text-primary transition-bounce px-3 py-3 rounded-xl hover:bg-glass/20 border border-glass-border/20"
                 >
                   <Calculator className="w-4 h-4 mr-3 text-emerald-500" />
                   <span>Calculadora</span>
                 </button>
 
-                {/* Calculator Dropdown */}
                 {isCalculatorOpen && (
                   <div className="ml-4 pl-4 border-l border-glass-border/20">
                     <CartSummary inline={true} />
                   </div>
                 )}
 
-                {/* Filtros Button (home o catálogo) */}
                 {(location.pathname.includes('/catalogo') || location.pathname === '/') && (
                   <>
                     <button
-                      onClick={() => {
-                        setIsFiltersOpen(!isFiltersOpen);
-                      }}
+                      onClick={() => setIsFiltersOpen(!isFiltersOpen)}
                       className="flex items-center w-full text-left text-sm text-foreground/80 hover:text-primary transition-bounce px-3 py-3 rounded-xl hover:bg-glass/20 border border-glass-border/20"
                     >
                       <Filter className="w-4 h-4 mr-3 text-blue-500" />
@@ -258,17 +261,19 @@ const Header = () => {
 
                     {isFiltersOpen && (
                       <div className="ml-4 pl-4 border-l border-glass-border/20">
-                        <ProductFilters onFiltersChange={handleFiltersChange} categories={categories} selectedCategory="all" />
+                        <ProductFilters
+                          onFiltersChange={handleFiltersChange}
+                          categories={categories}
+                          selectedCategory="all"
+                        />
                       </div>
                     )}
                   </>
                 )}
               </div>
 
-              {/* Divider */}
-              <div className="border-t border-glass-border/20"></div>
+              <div className="border-t border-glass-border/20" />
 
-              {/* Contacto (abre Telegram) */}
               <button
                 onClick={() => {
                   setIsMenuOpen(false);
